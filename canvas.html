@@ -1,0 +1,423 @@
+<html>
+<script src="./savepage.js"></script>
+<body>
+<div id="graph">
+</div>
+<div id="drawing" style="position: relative;">
+</div>
+<canvas id="processCanvas"></canvas>
+<div style="position: relative;">
+	
+</div>
+<div style="position: relative;">
+	<canvas id="myCanvas"></canvas>
+</div>
+</html>
+</body>
+<script>
+
+var lines = [
+{
+	beginNodeId:"1",
+	beginNode:"测试节点1",
+	endNodeId:"2",
+	endNode:"测试节点2"
+},
+{
+	beginNodeId:"2",
+	beginNode:"测试节点2",
+	endNodeId:"3",
+	endNode:"测试节点3"
+},
+{
+	beginNodeId:"3",
+	beginNode:"测试节点3",
+	endNodeId:"4",
+	endNode:"测试节点4"
+},
+{
+	beginNodeId:"4",
+	beginNode:"测试节点4",
+	endNodeId:"5",
+	endNode:"测试节点5"
+},
+{
+	beginNodeId:"5",
+	beginNode:"测试节点5",
+	endNodeId:"6",
+	endNode:"测试节点6"
+},
+{
+	beginNodeId:"5",
+	beginNode:"测试节点5",
+	endNodeId:"1",
+	endNode:"测试节点1"
+},
+{
+	beginNodeId:"7",
+	beginNode:"测试节点7",
+	endNodeId:"8",
+	endNode:"测试节点8"
+}
+];
+
+var allNodesArr = [];
+var allStartNodes = [];
+var allEndNodes = [];
+var onlyStartNodes=[];//只是起始节点
+var onlyEndNodes = [];//只是结束节点
+	
+//获取起点
+function getStartEndNodes(allnodes){
+	
+	for(var i in allnodes){
+		var node = allnodes[i];
+		var beginNode = {
+						id:node.beginNodeId,
+						name:node.beginNode
+						};
+		var endNode = {
+						id:node.endNodeId,
+						name:node.endNode
+						};
+		allNodesArr.push(beginNode);
+		allNodesArr.push(endNode);
+
+		allStartNodes.push(beginNode);
+		allEndNodes.push(endNode);
+	}
+	allNodesArr = unique(allNodesArr);//去重
+	allStartNodes = unique(allStartNodes);
+	allEndNodes = unique(allEndNodes);
+	//仅是开始节点
+	onlyStartNodes = allStartNodes.filter(function(node){
+		var flag = true;
+		for(var i in lines){
+			if(lines[i].endNodeId == node.id){
+				flag = false;
+			}
+		}
+		return flag;
+	});
+	console.log(onlyStartNodes);
+	
+}
+
+// 对象数组去重
+function unique(inputArr){
+	var obj = {};
+	var outputArr = [];
+	for(var i in inputArr){
+		if(!obj[inputArr[i].id]){
+			outputArr.push(inputArr[i]);
+			obj[inputArr[i].id] = true;
+		}
+	}
+	return outputArr;
+}
+//运行
+getStartEndNodes(lines);
+
+//有向图邻接表
+// var targetNodesHtml = "";
+
+// for(var i in allNodesArr){
+// 	var node = allNodesArr[i]
+// 	targetNodesHtml = targetNodesHtml + "<div class='graph-block target-node'>"+node.name+"</div>";
+// }
+
+// var firstLineHtml = "<div class='graph-line '><div class='graph-block source-node target-node'></div>"+targetNodesHtml+"</div>";
+
+// var allEdgeHtml = ""
+// for(var i in allNodesArr){
+// 	var edgeArr = [];//线数组
+	
+// 	var sourceNode = allNodesArr[i];//源节点
+	
+// 	var edgeHtml = "<div class='graph-line'><div class='graph-block source-node'>"+sourceNode.name+"</div>";
+	
+// 	for(var j in allNodesArr){
+// 		var targetNode = allNodesArr[j];//目的节点
+// 		var inFlag = false;
+// 		for(var k in lines){
+// 			var line = lines[k]; 
+// 			if(line.beginNodeId==sourceNode.id && line.endNodeId==targetNode.id){
+// 				inFlag = true;
+// 			}
+// 		}
+// 		if(inFlag){
+// 			edgeArr.push(1)
+// 		}else{
+// 			edgeArr.push(0);
+// 		}
+// 	}
+// 	for(var m in edgeArr){
+// 		if(edgeArr[m]==1){//着色
+// 			edgeHtml = edgeHtml + "<div class='graph-block' style='font-weight: bold;background-color:#4ff181;'>"+edgeArr[m]+"</div>";
+// 		}else{
+// 			edgeHtml = edgeHtml + "<div class='graph-block'>"+edgeArr[m]+"</div>";
+// 		}
+// 	}
+// 	edgeHtml = edgeHtml + "</div>";
+// 	allEdgeHtml = allEdgeHtml + edgeHtml
+// }
+
+// var graph = document.getElementById("graph");
+// graph.innerHTML = firstLineHtml + allEdgeHtml;
+
+//canvas画图-----开始
+var processCanvas = document.getElementById('processCanvas');
+
+var canvasHeight = allNodesArr.length * 60
+processCanvas.height = canvasHeight;
+processCanvas.width = canvasHeight;
+var ctx = processCanvas.getContext("2d");
+
+var num = allNodesArr.length;//有多少个点
+var angle = Math.PI * 2 / num;//分角
+
+var x = processCanvas.width/2;//大圆心x坐标
+var y = processCanvas.height/2;//大圆心y坐标
+var r = x>y ? (y-40) : (x-40);//大圆半径
+
+var xTemp=x-r;//小圆心x坐标
+var yTemp=y;//小圆心y坐标
+var rTemp=40;//小圆半径
+
+//画小圆
+for(var i in allNodesArr){
+	var nodeId = allNodesArr[i].id;//点的id
+	var nodeName = allNodesArr[i].name;//
+	
+	//点中心的坐标
+	xTemp = x + r*Math.sin(i*angle);
+	yTemp = y + r*Math.cos(i*angle);
+
+	ctx.beginPath();
+	ctx.arc(xTemp, yTemp, rTemp, Math.PI * 2, false);
+	ctx.closePath();
+	
+	if(onlyStartNodes.includes(nodeId)){//开始节点涂色
+		ctx.fillStyle = 'green';
+	}else if(onlyEndNodes.includes(nodeId)){//结束节点涂色
+		ctx.fillStyle = 'red';
+	}else{
+		ctx.fillStyle = 'rgb(79,241,129,1)';
+	}
+	
+	ctx.fill();
+	
+	// 设置字体
+	ctx.font = "12px bold 黑体";
+	// 设置颜色
+	ctx.fillStyle = 'rgb(0,0,0,1)';
+	// 设置水平对齐方式
+	ctx.textAlign = "center";
+	// 设置垂直对齐方式
+	ctx.textBaseline = "middle";
+	ctx.fillText(nodeName, xTemp, yTemp);
+	
+	allNodesArr[i].x = xTemp;
+	allNodesArr[i].y = yTemp;
+	
+}
+//画线
+for(var i in lines){
+
+	var startNode = allNodesArr.find(function(node){
+		return node.id == lines[i].beginNodeId;
+	})
+	var endNode = allNodesArr.find(function(node){
+		return node.id == lines[i].endNodeId;
+	});
+	
+	ctx.strokeStyle="gray";
+	ctx.fillStyle="blue";
+	ctx.lineWidth=1;
+	
+	// 开始画线	
+	ctx.beginPath();
+	var lineLength = distance(startNode,endNode);
+	//重新计算线的起点
+	var x1 = rTemp/lineLength*(endNode.x-startNode.x)+startNode.x;//交点的x值
+	var y1 = rTemp/lineLength*(endNode.y-startNode.y)+startNode.y;//交点的y值
+	var lineStart = {x:x1,y:y1};
+	ctx.moveTo(x1,y1);
+	//重新计算线的终点
+	var x2 = (lineLength-rTemp)/lineLength*(endNode.x-startNode.x)+startNode.x;//交点的x值
+	var y2 = (lineLength-rTemp)/lineLength*(endNode.y-startNode.y)+startNode.y;//交点的y值
+	var lineEnd = {x:x2,y:y2};
+	ctx.lineTo(x2,y2);
+	ctx.stroke();
+	ctx.closePath();
+	
+	//绘制箭头
+	var angleLength = 15;//设置角的长度 
+	var theta = 20*Math.PI/180;//设置角的角度
+
+	var lineK=(lineStart.x-lineEnd.x)/(lineStart.y-lineEnd.y);//直线斜率
+	//直线与水平线夹角（-90 ~ 90）
+	var lineTheta = Math.atan(lineK);
+	//极坐标系转换为平面坐标系
+	var leftTheta = lineTheta+theta;
+	var rightTheta = lineTheta-theta;
+	
+	var x4=0,y4=0;//箭头左侧坐标
+	var x5=0,y5=0;//箭头右侧坐标
+	
+	if(endNode.y - startNode.y > 0){//向量夹角在0-180度之间（0--PI）
+		x4 = x2 - angleLength*Math.sin(leftTheta);
+		y4 = y2 - angleLength*Math.cos(leftTheta);
+		
+		x5 = x2 - angleLength*Math.sin(rightTheta);
+		y5 = y2 - angleLength*Math.cos(rightTheta);
+	}else{//向量夹角在180度-360度之间（PI--2*PI）
+		x4 = x2 + angleLength*Math.sin(leftTheta);
+		y4 = y2 + angleLength*Math.cos(leftTheta);
+		
+		x5 = x2 + angleLength*Math.sin(rightTheta);
+		y5 = y2 + angleLength*Math.cos(rightTheta);
+	}
+
+	
+	/**
+	var x3 = (lineLength-rTemp-angleLength)/lineLength*(endNode.x-startNode.x)+startNode.x;//交点的x值
+	var y3 = (lineLength-rTemp-angleLength)/lineLength*(endNode.y-startNode.y)+startNode.y;//交点的y值
+	var intersection = {x:x3,y:y3};//垂线与直线交点
+	var k = 1/lineK;//正交线斜率 垂线y=kx+b
+	var b = y3-k*x3;//求出直线偏移
+	*/
+	
+
+	//以x2 和y2为起点，左右各成一定角度画箭头
+	ctx.save();//入栈
+	
+	ctx.beginPath();
+	ctx.strokeStyle="gray";
+	
+	ctx.moveTo(x2,y2);
+	ctx.lineTo(x4,y4);
+	ctx.moveTo(x2,y2);
+	ctx.lineTo(x5,y5);
+	ctx.closePath();
+	ctx.stroke();
+	ctx.restore();//出栈
+
+}
+//求两个点之间的距离
+function distance(start,end){
+	return Math.sqrt(Math.pow((start.x - end.x),2)+Math.pow((start.y - end.y),2));
+}
+	
+processCanvas.οnmοusedοwn=function (e) {
+	console.log("οnmοusedοwn");
+	processCanvas.onmousemove = function(e){
+	console.log("onmousemove");
+		 var x = e.clientX;
+		 var y = e.clientY;
+		console.log("x="+x);
+	};
+
+	processCanvas.onmouseup = function(){
+		//canva.onmousemove = null;
+		//canva.onmouseup = null;
+	};
+}
+
+getMaxPath();
+function getMaxPath(){
+	var pathArr = [];
+	for(var i in onlyStartNodes){
+		var startNode = onlyStartNodes[i];
+		var pathTemp = [];
+		var result = []
+		getPath(startNode,pathTemp,result);
+		console.log(result);
+	}
+}
+function getPath(startNode,prePath,result){
+	for(var i in lines){
+		if(lines[i].beginNodeId == startNode.id){
+			prePath.push(startNode);
+			result.push(prePath);
+			startNode = allNodesArr.find(function(node){
+				return node.id == lines[i].endNodeId;
+			})
+			getPath(startNode,prePath,result);
+		}
+	}
+}
+
+</script>
+<style>
+.front-arrow{
+	position:absolute;
+    right: -5px;
+	bottom:0px;
+    width: 10px;
+    height: 10px;
+    border: 1px solid black;
+    border-top: none;
+    border-right: none;
+    transform: rotate(-45deg);
+	}
+.back-arrow{
+	position:absolute;
+    top: 0px;
+	left:-5px;
+    width: 10px;
+    height: 10px;
+    border: 1px solid black;
+    border-top: none;
+    border-right: none;
+    transform: rotate(135deg);
+}
+.edge-front{
+	position:absolute;
+	border-top:1px solid;
+	border-left:1px solid;
+	border-right:1px solid;
+}
+.edge-back{
+	position:absolute;
+	border-bottom:1px solid;
+	border-left:1px solid;
+	border-right:1px solid;
+}
+.drawing-line{
+	display:flex;
+	position:absolute;
+}
+.drawing-block{
+	width:60px;
+	height:60px;
+	border:1px solid #CCC;
+	border-radius: 30px;
+    line-height: 60px;
+    text-align: center;
+	margin: 9px;
+	background-color:#4ff181;
+}
+.graph-line{
+	display:flex;
+}
+.graph-block{
+	width:60px;
+	text-align: center;
+	border-bottom: 1px solid #CCC;
+	border-right: 1px solid #CCC;
+    height: 40px;
+    line-height: 40px;
+}
+.target-node{
+	background-color:red;
+	height: 200px;
+    line-height: 20px;
+}
+.source-node{
+	background-color:green;
+	width: 240px;
+    font-size: 12px;
+}
+</style>
+
