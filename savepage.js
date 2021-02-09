@@ -6,7 +6,9 @@
 (function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
         typeof define === 'function' && define.amd ? define(factory) :
-            (global = global || self, global.html2canvas = factory().html2canvas, global.SaveButton = factory().SaveButton, global.saveDom = factory().saveDom);
+            (global = global || self, global.savepage = factory(), global.html2canvas= global.savepage.html2canvas, 
+            global.SaveButton = global.savepage.SaveButton, global.saveDom = global.savepage.saveDom,
+            global.destroySaveButton = global.savepage.destroySaveButton);
 }(this, function () {
     'use strict';
 
@@ -7097,7 +7099,7 @@
      * 以上为html2canvas
      * 以下为创建保存按钮
      */
-    var saveButtonInstance = "";
+    let saveButtonInstance = "";
     var saveButtonWidth = 0;
     var saveButtonHeight = 0;
     var right = 20;
@@ -7120,6 +7122,7 @@
      */
     function SaveButton(option) {
         if (saveButtonInstance) {
+            console.log("SaveButton has been existed",saveButtonInstance)
             return;
         }
         saveButtonInstance = document.createElement("div");
@@ -7156,15 +7159,27 @@
         saveButtonInstance.onclick = saveDom.bind(this, option);
 
         saveButtonInstance.ontouchstart = touchstartEvent;
-        saveButtonInstance.ontouchmove = touchmoveEvent;
+        window.ontouchmove = touchmoveEvent;
         saveButtonInstance.ontouchend = touchendEvent;
 
         saveButtonInstance.onmousedown = touchstartEvent;
-        saveButtonInstance.onmousemove = touchmoveEvent;
+        window.onmousemove = touchmoveEvent;
         saveButtonInstance.onmouseup = touchendEvent;
 
         document.body.appendChild(saveButtonInstance);
     }
+
+    var destroySaveButton=()=>{
+        // console.log("destroySaveButton saveButtonInstance=",saveButtonInstance)
+        if(saveButtonInstance){
+            console.log("destroySaveButton")
+            saveButtonInstance.remove();
+            saveButtonInstance = null;
+            window.removeEventListener("touchmove",touchmoveEvent);
+            window.removeEventListener("mousemove",touchmoveEvent);
+        }
+    }
+    
     //以下用于按钮移动
     var x0 = 0;
     var y0 = 0;
@@ -7314,8 +7329,11 @@
         });
     }
 
+
+
     return {
         SaveButton: SaveButton,
+        destroySaveButton:destroySaveButton,
         saveDom: saveDom,
         html2canvas: html2canvas
     }
