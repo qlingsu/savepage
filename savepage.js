@@ -7167,12 +7167,16 @@
         saveButtonInstance.onmouseup = touchendEvent;
 
         document.body.appendChild(saveButtonInstance);
+
+        this.click = saveDom.bind(this, option);
     }
 
-    var destroySaveButton=()=>{
-        // console.log("destroySaveButton saveButtonInstance=",saveButtonInstance)
+    SaveButton.prototype.instance = saveButtonInstance;
+
+    SaveButton.prototype.destroy = destroySaveButton;
+
+    function destroySaveButton(){
         if(saveButtonInstance){
-            console.log("destroySaveButton")
             saveButtonInstance.remove();
             saveButtonInstance = null;
             window.removeEventListener("touchmove",touchmoveEvent);
